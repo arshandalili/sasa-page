@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>SASA: Subspace-Aware Sparse Autoencoders for Effective Mechanistic Interpretability</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="SASA replaces the single decoder direction of each sparse-autoencoder latent with a learned subspace, so multi-dimensional concepts such as days and months are not split across many latents. NeurIPS 2026.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="SASA: Subspace-Aware Sparse Autoencoders for Effective Mechanistic Interpretability">
+    <meta property="og:description" content="Sparse autoencoders whose features are subspaces. Lower feature absorption than TopK, BatchTopK, and Matryoshka SAEs on GPT-2 and Mistral-7B, at a reconstruction cost.">
+    <meta property="og:image" content="static/img/cover.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SASA: Subspace-Aware Sparse Autoencoders for Effective Mechanistic Interpretability">
+    <meta name="twitter:description" content="Sparse autoencoders whose features are subspaces. NeurIPS 2026.">
+    <meta name="twitter:image" content="static/img/cover.png">
+    <link rel="icon" type="image/svg+xml" href="static/img/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <link rel="stylesheet" href="static/css/site.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" defer></script>
+    <script src="static/js/util.js" defer></script>
+    <script src="static/js/toy.js" defer></script>
+    <script src="static/js/page.js" defer></script>
+    <script src="static/js/figs.js" defer></script>
+    <script src="static/js/charts.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a href="#top" class="wordmark"><img src="static/img/logo.svg" alt="" class="mark">SASA</a>
+      <nav>
+        <a href="https://arxiv.org/abs/2606.06333" target="_blank" rel="noopener">Paper</a>
+        <a href="https://github.com/arshandalili/sasa" target="_blank" rel="noopener">Code</a>
+        <a href="#citation">Cite</a>
+      </nav>
+    </header>
+
+    <div id="top" class="post-heading">
+      <p class="eyebrow">SASA</p>
+      <h1 class="post-title">Subspace-Aware Sparse Autoencoders for Effective Mechanistic Interpretability</h1>
+      <p class="post-subtitle">Sparse autoencoders whose features are subspaces, so a concept like the months stays in one feature instead of splitting across many</p>
+      <div class="publish-metadata">
+        <p class="authors">Seyed Arshan Dalili &nbsp;·&nbsp; Mehrdad Mahdavi</p>
+        <p class="affiliations">The Pennsylvania State University</p>
+      </div>
+      <p class="venue">NeurIPS 2026</p>
+      <div class="resource-links">
+        <a href="https://arxiv.org/abs/2606.06333" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>arXiv</a>
+        <a href="https://arxiv.org/pdf/2606.06333" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>PDF</a>
+        <a href="https://github.com/arshandalili/sasa" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>Code</a>
+        <a href="https://github.com/arshandalili/sasa#pretrained-models" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></svg>Models</a>
+        <a href="#citation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.76-2-2-2H4c-1.25 0-2 .75-2 2v6c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .01-1 1.03V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.76-2-2-2h-4c-1.25 0-2 .75-2 2v6c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>BibTeX</a>
+      </div>
+      <p class="tldr"><b>TL;DR</b>A sparse autoencoder gives each latent one decoder direction. When a concept occupies a subspace, like the ring that months form inside Mistral-7B, the autoencoder splits it across many latents. The paper proves why: accurate reconstruction with fewer active latents than the concept's dimension needs many directions, and the ℓ<sub>1</sub> penalty prefers extra directions even when a basis already suffices. SASA gives each feature a learned subspace, selects whole groups by their norm, and lets a nuclear-norm penalty set each group's rank. On GPT-2 it roughly halves feature absorption relative to the best vector SAE at matched width and sparsity, at some cost in reconstruction.</p>
+    </div>
+
+    <div class="post-cover">
+      <div class="fig" data-fig="cover"></div>
+      <p class="cover-cap">A toy concept shaped like the ring of months. <b>Left:</b> a vector SAE with 12 latents. The latent whose direction is nearest the input wins, so every month turns on a different latent, and the reconstruction misses the ring between directions. <b>Right:</b> one SASA group of width 2 spans the ring's plane. The same group stays on all year, its norm stays constant, and its two code coordinates trace the month. <span class="hint">Toy model, not trained weights.</span></p>
+    </div>
+
+    <div class="post-shell">
+      <nav aria-label="Table of contents" class="left-toc">
+        <ul>
+          <li><a href="#subspaces" data-sec="subspaces">Concepts that occupy subspaces</a></li>
+          <li><a href="#splitting" data-sec="splitting">Why vector SAEs split them</a></li>
+          <li><a href="#l1" data-sec="l1">The ℓ₁ penalty prefers extra directions</a></li>
+          <li><a href="#sasa" data-sec="sasa">SASA: one subspace per feature</a></li>
+          <li><a href="#recovery" data-sec="recovery">One group recovers the feature</a></li>
+          <li><a href="#samples" data-sec="samples">Splitting also costs data</a></li>
+          <li><a href="#results" data-sec="results">Results on GPT-2 and Mistral-7B</a></li>
+          <li><a href="#inside" data-sec="inside">Inside a group</a></li>
+          <li><a href="#steering" data-sec="steering">Steering with a group</a></li>
+          <li><a href="#ablations" data-sec="ablations">Ablations</a></li>
+          <li><a href="#limitations" data-sec="limitations">Limitations</a></li>
+          <li><a href="#citation" data-sec="citation">Citation</a></li>
+        </ul>
+      </nav>
+
+      <article class="content">
+        <p>
+Sparse autoencoders (SAEs) are a standard tool for reading the activations of a language model. An SAE rewrites an activation as a sparse combination of learned directions, and each direction often lines up with a human-readable concept.<label for="sn-1" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-1" class="margin-toggle"><span class="sidenote"><a href="https://transformer-circuits.pub/2023/monosemantic-features" target="_blank" rel="noopener">Towards Monosemanticity</a> (Bricken et al., 2023)<br><a href="https://arxiv.org/abs/2406.04093" target="_blank" rel="noopener">Scaling and evaluating sparse autoencoders</a> (Gao et al., 2024)</span>
+The design rests on two hypotheses: that a model packs many sparse features into one layer (superposition), and that each feature is a direction (the linear representation hypothesis).<label for="sn-2" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-2" class="margin-toggle"><span class="sidenote"><a href="https://arxiv.org/abs/2209.10652" target="_blank" rel="noopener">Toy Models of Superposition</a> (Elhage et al., 2022)<br><a href="https://arxiv.org/abs/2311.03658" target="_blank" rel="noopener">The Linear Representation Hypothesis and the Geometry of Large Language Models</a> (Park, Choe and Veitch, 2024)</span>
+        </p>
+        <p>
+A known failure is <em>feature splitting</em>: one concept is spread over many near-duplicate latents, each covering part of it, so interpreting the concept means collecting a cluster of latents instead of reading one. This page walks through the paper's account of where splitting comes from, and its fix. <strong>SASA</strong> (Subspace-Aware Sparse Autoencoders) makes a learned subspace the unit of representation.
+        </p>
+
+        <h2 id="subspaces">Concepts that occupy subspaces</h2>
+        <p>
+Recent work finds language-model features that are not one direction. Days of the week and months of the year form rings, and moving an activation around the ring changes which day or month the model predicts.<label for="sn-3" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-3" class="margin-toggle"><span class="sidenote"><a href="https://arxiv.org/abs/2405.14860" target="_blank" rel="noopener">Not All Language Model Features Are One-Dimensionally Linear</a> (Engels et al., 2025)<br><a href="https://arxiv.org/abs/2505.18235" target="_blank" rel="noopener">The Origins of Representation Manifolds in Large Language Models</a> (Modell, Rubin-Delanchy and Whiteley, 2025)</span>
+Figure 1 shows these rings in layer 8 of Mistral-7B, along with curves for years, temperature, and age. Its bottom row previews the problem this paper studies. In a standard SAE, 12 latents share the months ring, each covering a stretch of it. In SASA, two groups carry most of the months signal, and inside the main one the monthly centroids form a complete ring in calendar order.
+        </p>
+        <figure class="numbered wide fig-paper">
+          <img src="static/img/real-manifolds.webp" width="1268" height="954" loading="lazy" alt="Top: PCA projections of Mistral-7B layer-8 activations show rings for days of the week and months, and curves for years, temperature, and age; steering along the day and month rings shifts next-token probabilities from one name to the next. Bottom: 12 SAE latents tile the months ring while 2 SASA groups cover it; colored units carry 28 percent of SAE activation versus 67 percent of SASA group norm; inside SASA group 3810 the monthly centroids form a ring in calendar order.">
+          <figcaption><b>Concept geometry and feature splitting in Mistral-7B</b> (the paper's Figure 1). Top: PCA projections of layer-8 activations. Interventions along the circular representations of days and months change calendar predictions, and movement along the age curve favors “senior” over “child”. Bottom: colors mark the 12 SAE latents and 2 SASA groups with the largest contributions to the months representation. Among 77 SAE latents and 8 SASA groups selected for responding to month names, the colored units carry 28% of SAE activation and 67% of SASA group norm. Inside the dominant SASA group, the monthly centroids form a complete ring in calendar order.</figcaption>
+        </figure>
+        <p>
+The paper models an activation $\bh \in \R^d$ at a fixed layer and token as a sparse sum of low-dimensional features. Feature $i$ has a subspace $\cV_i$ of dimension $d_i$ with orthonormal basis $\bV_i \in \R^{d\times d_i}$, and coordinates $\bz_i \in \R^{d_i}$:
+        </p>
+        <div class="math-display">$$\bh \;=\; \sum_{i=1}^{F} \bV_i \bz_i \;+\; \bxi .$$</div>
+        <p>
+At most $s \ll F$ features are active in any one activation, and different feature subspaces are nearly orthogonal: unit vectors from $\cV_i$ and $\cV_j$ have inner product at most $\mu$. This is the multi-dimensional superposition hypothesis (Hypothesis 1 in the paper). A one-dimensional feature is the special case $d_i = 1$. To study one feature at a time, the analysis looks at its <em>slice</em> $\cM_i(t)$, the feature's possible activations at radius $t$ inside $\cV_i$.<label for="sn-4" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-4" class="margin-toggle"><span class="sidenote">Raw GPT-2 activations are low-dimensional on such concepts: 14 principal components explain 90% of the variance on temporal prompts, and 33 on geographical prompts, out of 768 (Appendix C.2).</span>
+        </p>
+
+        <h2 id="splitting">Why vector SAEs split them</h2>
+        <p>
+A standard SAE with $m$ latents encodes $\ba(\bh) = \sigma(\bE^\top \bh)$ and decodes $\hat{\bh} = \sum_j a_j(\bh)\, \bd_j$, one unit-norm direction $\bd_j$ per latent. Training minimizes reconstruction error plus an $\ell_1$ penalty:
+        </p>
+        <div class="math-display">$$\min_{\bE,\bD}\ \sum_{i=1}^{n}\Big[\tfrac12\big\lVert \bh_i - \bD\,\ba(\bh_i)\big\rVert_2^2 + \lambda\,\lVert \ba(\bh_i)\rVert_1\Big] \quad \text{s.t.}\ \lVert \bd_j\rVert_2 = 1 .$$</div>
+        <p>
+Suppose an input may use only $k$ of the latents that represent feature $i$ at once. Each input is then reconstructed from the span of $k$ directions. If $k < d_i$, no single choice of $k$ directions spans the whole feature, so the SAE has to tile the slice with many directions, each responsible for one patch. The paper makes this precise with the <em>$k$-sparse covering number</em> $L_i^{(k)}(\varepsilon)$: the fewest unit directions such that every point of the slice lies within $\varepsilon$ of the span of some $k$ of them. A feature <em>splits</em> at budget $k$ when $L_i^{(k)}(\varepsilon) > k$.
+        </p>
+        <div class="box prop">
+          <p class="box-title"><span class="num">Theorem 1</span> &nbsp;Covering number of a feature subspace</p>
+          <p>Let $d_i \ge 2$ and suppose the slice contains a cap of $\cV_i$ of angular radius $\rho$ (local richness). For every $1 \le k < d_i$ there is a constant $C = C(d_i, k, \rho) > 0$ such that for all $\varepsilon \in (0,\ t\sin\rho)$,</p>
+          <div class="math-display">$$L_i^{(k)}(\varepsilon) \;\ge\; C\left(\frac{t}{\varepsilon}\right)^{(d_i-k)/k}.$$</div>
+          <p>When $k \ge d_i$, any orthonormal basis of $\cV_i$ reconstructs the slice exactly: $L_i^{(d_i)}(0) = d_i$, with no splitting.</p>
+        </div>
+        <p>
+The exponent $(d_i - k)/k$ falls as $k$ grows and the count collapses to $d_i$ once $k$ reaches $d_i$. Figure 2 shows both regimes on a circle and a sphere. With one latent per input, every decoder direction covers two opposite patches, and the number of directions grows like $(t/\varepsilon)^{d_i-1}$. With a budget of $d_i$, a basis covers the slice exactly at every tolerance.
+        </p>
+        <figure class="numbered wide">
+          <div class="fig" data-fig="covering"></div>
+          <figcaption><b>Covering a feature slice with decoder directions.</b> Lower the tolerance $\varepsilon/t$ and watch the number of directions grow. On the circle, $\lceil \pi/2\beta \rceil$ lines with $\beta = \arcsin(\varepsilon/t)$ is the exact minimum. On the sphere, the count comes from a Fibonacci-lattice covering, an upper bound on the minimum, and Theorem 1 says the minimum grows at least like $(t/\varepsilon)^2$. Switching to $k = d_i$ shows one SASA group, whose basis covers the slice exactly with $d_i$ directions.</figcaption>
+        </figure>
+        <p>
+Proposition 1 extends the bound to superposed inputs. With noise $\lVert\bxi\rVert_2 \le \eta$, other active features bounded by $t$, and coherence $\mu(2s-1) < 1$, the same lower bound holds with $\varepsilon$ replaced by $\varepsilon + \eta + \mu s t$, as long as that effective error stays below $t\sin\rho$.
+        </p>
+        <p>
+Trained SAEs behave this way on synthetic manifolds with known geometry (Figure 3). Each dictionary has 256 decoder columns, and TopK and BatchTopK keep four latents active, as many columns as the single width-4 group SASA activates. The vector SAEs carve each manifold into local patches, while one SASA group, with effective rank equal to the manifold's dimension, responds across all of it. In published LLM SAEs, clusters of decoder directions are about twice as large as their PCA dimension: the median ratio is 1.67 for Mistral-7B and 2.18 for GPT-2 (Appendix C.3).
+        </p>
+        <figure class="numbered wide fig-paper">
+          <img src="static/img/synthetic-splitting.webp" width="1299" height="834" loading="lazy" alt="Grid of synthetic manifolds: a circle, a sphere, and a helix embedded in 64 dimensions. ReLU, TopK, and BatchTopK SAEs color the points by many different decoder atoms (57, 14, and 10 atoms for the circle; 111, 73, and 28 for the sphere; 48, 31, and 10 for the helix), while SASA uses one group of rank 2 or 3 for each.">
+          <figcaption><b>Feature splitting on synthetic manifolds</b> (the paper's Figure 4). A circle ($d_i = 2$), a sphere ($d_i = 3$), and a helix ($d_i = 3$) embedded in $\R^{64}$ with 5% noise. Points are colored by the most aligned decoder atom. The vector SAEs use 57, 14, and 10 atoms for the circle; 111, 73, and 28 for the sphere; and 48, 31, and 10 for the helix. SASA uses one group, of rank 2, 3, and 3.</figcaption>
+        </figure>
+
+        <h2 id="l1">The ℓ<sub>1</sub> penalty prefers extra directions</h2>
+        <p>
+The covering bound counts the directions a dictionary needs. It does not say which dictionary training prefers. Section 3.2 of the paper studies that question through the population risk of a decoder $\bD$ with optimal codes, taking the slice to be the whole radius-$t$ sphere in $\cV_i$:
+        </p>
+        <div class="math-display">$$R(\bD) \;=\; \E_{\bh\sim \mathrm{Unif}(\cM_i(t))}\Big[\min_{\ba}\ \tfrac12\lVert \bh - \bD\ba\rVert_2^2 + \lambda\lVert\ba\rVert_1\Big].$$</div>
+        <p>
+Every SAE that uses decoder $\bD$, whatever its encoder, has loss at least $R(\bD)$. Start from the basis decoder $\Dbasis = [\bv_1, \dots, \bv_{d_i}]$, which already spans the feature. Its optimal code soft-thresholds each coordinate, $a_k^\star = \operatorname{sign}(u_k)(t\lvert u_k\rvert - \lambda)_+$ for $\bh = t\bu$. On the set $\cA$ where every coordinate clears the threshold, this leaves a residual of fixed length $\lambda\sqrt{d_i}$:
+        </p>
+        <div class="math-display">$$\br(\bh) \;=\; \bh - \Dbasis\,\ba^\star(\bh) \;=\; \lambda \sum_{k=1}^{d_i} \operatorname{sign}(u_k)\,\bv_k .$$</div>
+        <p>
+An added unit direction $\dt$ stays unused only if $\lvert \dt^\top \br(\bh)\rvert \le \lambda$, the <em>inactivity certificate</em>. Otherwise a small coefficient on $\dt$ removes more reconstruction error than it costs in $\ell_1$.
+        </p>
+        <div class="box prop">
+          <p class="box-title"><span class="num">Theorem 2</span> &nbsp;Dual certificate violation</p>
+          <p>Let $d_i \ge 2$ and $\lambda \in (0, t/\sqrt{d_i})$. Take any unit $\dt$ in the span of the basis with coordinates $\bc$, other than $\pm\bv_k$. On the positive-measure set $\cU_{\bc}$ of inputs in $\cA$ whose coordinate signs match those of $\bc$,</p>
+          <div class="math-display">$$\dt^\top \br(\bh) \;=\; \lambda\lVert \bc\rVert_1 \;>\; \lambda .$$</div>
+          <p class="box-title" style="margin-top:.9rem"><span class="num">Proposition 2</span> &nbsp;A strict decrease in risk</p>
+          <p>With $\bD = [\Dbasis,\ \dt]$,</p>
+          <div class="math-display">$$R(\Dbasis) - R(\bD) \;\ge\; \frac{\lambda^2}{2}\big(\lVert\bc\rVert_1 - 1\big)^2 \Pr(\bu \in \cU_{\bc}) \;>\; 0 .$$</div>
+        </div>
+        <p>
+Figure 4 runs this argument on a two-dimensional slice with exact codes. Drag the input $\bh$ around the circle and the added direction $\dt$ around the origin. The green arcs mark every input whose optimal loss drops when $\dt$ joins the dictionary.
+        </p>
+        <figure class="numbered">
+          <div class="fig" data-fig="certificate"></div>
+          <figcaption><b>The inactivity certificate on a 2-D slice ($t = 1$).</b> The hollow dot is the basis reconstruction $\Dbasis\ba^\star$ and the red arrow is the residual $\br$. The gray band on the circle is the set $\cA$ where both basis coefficients clear the threshold. The readout gives the loss at the current input with and without $\dt$, the risk gap $R(\Dbasis) - R(\bD)$ over the whole circle, and the lower bound of Proposition 2. All values come from exact $\ell_1$ codes.</figcaption>
+        </figure>
+        <p>
+The decrease happens without enlarging the span of the decoder, so the $\ell_1$ objective itself favors non-basis directions over the basis alone. At a fixed width, Theorem 5 (Appendix E) shows that a basis padded with duplicate columns is not a local minimizer: an arbitrarily small rotation of one duplicate lowers the risk. These results concern the $\ell_1$ risk with optimal codes; they do not claim that TopK training must end in a fragmented dictionary.<label for="sn-5" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-5" class="margin-toggle"><span class="sidenote">Related observations: <a href="https://arxiv.org/abs/2604.28119" target="_blank" rel="noopener">Bhalla et al. (2026)</a> give conditions under which an idealized sparse decoder captures a compact manifold, yet find fragmentation (“dilution”) in trained LLM SAEs. <a href="https://arxiv.org/abs/2509.02565" target="_blank" rel="noopener">Michaud, Gorton and McGrath (2025)</a> show that SAEs can spend many latents on one feature manifold.</span>
+        </p>
+
+        <h2 id="sasa">SASA: one subspace per feature</h2>
+        <p>
+SASA keeps the shape of an SAE but groups its $m = Kr$ latents into $K$ groups of width $r$. Group $k$ has an encoder block $\bE_k \in \R^{r\times d}$, pre-activation $\bp_k(\bh) = \bE_k\bh \in \R^r$, and a decoder block $\bD_k \in \R^{d\times r}$. A Top-$s$ gate keeps the $s$ groups with the largest norms, and each kept group passes its whole code:
+        </p>
+        <div class="math-display">$$\cT_s(\bh) \in \operatorname*{arg\,max}_{\lvert T\rvert = s}\ \sum_{k\in T}\lVert \bp_k(\bh)\rVert_2, \qquad \ba_k(\bh) = \begin{cases}\bp_k(\bh) & k \in \cT_s(\bh)\\ \mathbf{0} & \text{otherwise,}\end{cases} \qquad \hat{\bh} = \sum_{k=1}^{K}\bD_k\,\ba_k(\bh).$$</div>
+        <p>
+Training minimizes reconstruction error plus a nuclear-norm penalty on each group's reconstruction map $\bW_k = \bD_k\bE_k$:
+        </p>
+        <div class="math-display">$$\min_{\bE,\bD}\ \frac1n\sum_{i=1}^{n}\big\lVert \bh_i - \bD\,\ba(\bh_i)\big\rVert_2^2 \;+\; \lambda_{\dim}\sum_{k=1}^{K}\big\lVert \bD_k\bE_k\big\rVert_* .$$</div>
+        <p>
+Two choices do the work. The gate ranks groups by one scalar each and charges nothing for using several coordinates inside a group, so it removes the coordinatewise incentive of the previous section. The nuclear norm equals the smallest weight decay $\tfrac12(\lVert\bD_k\rVert_F^2 + \lVert\bE_k\rVert_F^2)$ over factorizations of $\bW_k$, and it shrinks the singular values of each group so that its effective rank adapts to the dimension of the feature it carries.<label for="sn-6" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-6" class="margin-toggle"><span class="sidenote">The variational form is from <a href="https://arxiv.org/abs/1901.08168" target="_blank" rel="noopener">Kunin et al. (2019)</a>. In a batch the penalty is computed as $\operatorname{tr}\big((\bW_k^\top\bW_k)^{1/2}\big)$.</span>
+Figure 5 compares the two gates at the same budget of decoder columns and active coordinates.
+        </p>
+        <figure class="numbered wide">
+          <div class="fig" data-fig="arch"></div>
+          <figcaption><b>Scalar TopK and group Top-$s$ at the same budget.</b> Both models have 24 decoder columns and 6 active coordinates per input. TopK keeps the 6 largest scalar pre-activations, wherever they fall. SASA keeps the 2 groups whose 3-dimensional pre-activations have the largest norms, and the penalty $\lambda_{\dim}\sum_k\lVert\bD_k\bE_k\rVert_*$ shrinks each group to the rank its feature needs. The paper's GPT-2 comparison uses the same matching at scale: 24,576 columns as 4,096 groups of width 6, and $\ell_0 = 120$ as 20 active groups.</figcaption>
+        </figure>
+        <div class="box algo">
+          <p class="box-title">Algorithm 1 &nbsp;SASA training step</p>
+          <p class="req">Input: a minibatch of activations $\{\bh^{(j)}\}_{j=1}^{B}$; hyperparameters $s$, $s_{\mathrm{aux}}$, $\lambda_{\mathrm{aux}}$, $\lambda_{\dim}$.</p>
+          <ol>
+            <li>Rescale every decoder column to unit norm.</li>
+            <li>For each $\bh$, compute every group's pre-activation $\bp_k(\bh) = \bE_k\bh$.</li>
+            <li>Keep the $s$ groups with the largest $\lVert\bp_k(\bh)\rVert_2$; set the other codes to $\mathbf{0}$.</li>
+            <li>If some coordinates have been dead for a while, fit the residual $\br = \bh - \bD\ba(\bh)$, held fixed, with the $s_{\mathrm{aux}}$ largest dead pre-activations: $\mathcal{L}_{\mathrm{aux}} = \lVert \br - \bD\tilde{\ba}(\bh)\rVert_2^2$.</li>
+            <li>Minimize $\frac1B\sum_j \big(\lVert\bh^{(j)} - \bD\ba(\bh^{(j)})\rVert_2^2 + \lambda_{\mathrm{aux}}\mathcal{L}_{\mathrm{aux}}\big) + \lambda_{\dim}\sum_k \lVert\bD_k\bE_k\rVert_*$.</li>
+          </ol>
+          <p class="phase">At inference</p>
+          <p class="req" style="margin:0">Apply the same gate. A group's intensity on an input is the norm of its code, $\lVert\ba_k(\bh)\rVert_2$; the code itself says where on the feature the input lies.</p>
+        </div>
+        <p>
+The auxiliary loss on dead coordinates follows TopK SAEs, as a stabilizer.<label for="sn-7" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-7" class="margin-toggle"><span class="sidenote">Training settings: inputs layer-normalized; Adam with learning rate $4\times10^{-4}$ (GPT-2) or $2\times10^{-4}$ (Mistral-7B), 4,096 tokens per batch, 1,000 warm-up steps, and linear decay over the last fifth of training. $(K, r, s) = (4096, 6, 20)$ for GPT-2 and $(4096, 8, 10)$ for Mistral-7B.</span>
+        </p>
+
+        <h2 id="recovery">One group recovers the feature</h2>
+        <p>
+A group of width $r \ge d_i$ can hold the whole feature: with $\bD_k = [\bV_i\ \mathbf{0}]$ and $\bE_k = [\bV_i\ \mathbf{0}]^\top$, the Top-1 gate routes the entire slice to that group and reconstructs it exactly (Proposition 3). The harder question is whether the objective prefers that representation over splitting the slice across groups. With the Top-1 gate, splitting means routing different parts of the slice to different groups.
+        </p>
+        <div class="box prop">
+          <p class="box-title"><span class="num">Theorem 3</span> &nbsp;Block recovery on the slice</p>
+          <p>Let $d_i \ge 2$, block size $r \ge d_i$, Top-$s$ gating with $s = 1$, and $0 < \lambda_{\dim} < t^2/d_i$, with inputs uniform on the radius-$t$ sphere in $\cV_i$. Then every global minimizer of the SASA population objective activates a single block $k^\star$ almost surely, with $\operatorname{col}(\bW_{k^\star}) = \cV_i$. The active reconstruction map is unique up to the index $k^\star$, and if $r = d_i$ its decoder columns span $\cV_i$.</p>
+        </div>
+        <p>
+The proof tracks each block's share of the second moment, $\bM_k = \E[\bh\bh^\top \mathbb{1}\{\bh \text{ routed to } k\}]$. Routing only redistributes a fixed total, $\sum_k \bM_k = \bSigma_i = \tfrac{t^2}{d_i}\bP_{\cV_i}$. Any block that receives part of the slice sees variation along all $d_i$ directions, so if the slice is split, each $\bM_k$ has spectral norm strictly below $t^2/d_i$, and the nuclear-norm bound in the proof leaves a strictly positive gap. The minimum value, $d_i\lambda_{\dim} - d_i^2\lambda_{\dim}^2/(4t^2)$, is reached only by one block with $\bW_{k^\star} = \big(1 - \tfrac{\lambda_{\dim}d_i}{2t^2}\big)\bP_{\cV_i}$.
+        </p>
+        <p>
+Figure 6 puts the two objectives side by side on the same circle. For the standard SAE, the population risk keeps falling as directions inside the span are added to the basis. For SASA, the lowest objective any blocks can reach rises as the circle is split across more blocks.
+        </p>
+        <figure class="numbered wide">
+          <div class="fig" data-fig="prefs"></div>
+          <figcaption><b>The two objectives prefer opposite things</b> (unit circle, $d_i = 2$). Left: $R(\bD)$ for the basis followed by bisecting directions in its span, computed with exact $\ell_1$ codes. Right: the lowest SASA objective when the circle is divided into equal arcs, one block per arc; each block's best map shrinks the eigenvalues of its second moment. With one block the value is $2\lambda_{\dim} - \lambda_{\dim}^2$, as Theorem 3 predicts. Hover a point to see the dictionary or the routing it stands for.</figcaption>
+        </figure>
+        <p>
+For superposed inputs, several groups must be selected from the same activation. With a known dictionary of orthonormal blocks, $s < \tfrac12(1 + 1/\mu)$ is enough for block orthogonal matching pursuit to recover the active blocks exactly from noiseless inputs.<label for="sn-8" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-8" class="margin-toggle"><span class="sidenote"><a href="https://arxiv.org/abs/0906.3173" target="_blank" rel="noopener">Compressed Sensing of Block-Sparse Signals: Uncertainty Relations and Efficient Recovery</a> (Eldar, Kuppinger and Bölcskei, 2010)</span>
+SASA replaces that search with a learned encoder and the norm gate; proving that this amortized gate selects the right blocks is outside the paper's scope.
+        </p>
+
+        <h2 id="samples">Splitting also costs data</h2>
+        <p>
+Every SAE training example is an LLM forward pass. On Mistral-7B, producing layer-8 activations for one million tokens takes about 25 times as long as the SASA forward and backward passes on them (Figure 7), so the number of activations an autoencoder needs is a direct cost.
+        </p>
+        <figure class="numbered">
+          <div class="fig" data-chart="clock"></div>
+          <figcaption><b>Data acquisition dominates training time</b> (the paper's Figure 2). A full Mistral-7B forward pass that caches layer-8 activations, compared with the SASA forward and backward passes on them, per million tokens, averaged over 20 runs.</figcaption>
+        </figure>
+        <p>
+A splitting dictionary needs data for every atom. Proposition 4 treats a fixed dictionary of $N$ directions with one active per input as a coupon collector. Seeing every atom at least once with probability $1-\delta$ needs
+        </p>
+        <div class="math-display">$$n \;\ge\; (N-1)\log\!\Big(\frac{N(1-\delta)}{\delta}\Big)$$</div>
+        <p>
+samples. Estimating the feature's subspace directly is polynomial in $d_i$ (Theorem 4): the top $d_i$ eigenvectors of the empirical second moment come within $\varepsilon$ of every point of the slice, with probability at least $1-\delta$, once
+        </p>
+        <div class="math-display">$$n \;\ge\; 128\, d_i^2 \log\!\Big(\frac{2d}{\delta}\Big)\frac{t^2}{\varepsilon^2}.$$</div>
+        <p>
+With $k = 1$, Theorem 1 asks for $N \ge C(t/\varepsilon)^{d_i - 1}$ atoms, so observing all of them takes $\Omega(N\log N)$ samples. Under the single-feature assumptions, estimating the subspace can therefore take fewer activations, and fewer LLM forward passes, than populating a split dictionary.
+        </p>
+
+        <h2 id="results">Results on GPT-2 and Mistral-7B</h2>
+        <p>
+SASA is trained on residual-stream activations of GPT-2 Small (layer 7, $d = 768$, OpenWebText) and Mistral-7B (layer 8, $d = 4096$, Pile). The main GPT-2 comparison holds everything fixed but the architecture: 24,576 decoder columns, 300M training tokens, the same optimizer and schedule, and target sparsity $\ell_0 = 120$ scalar coordinates per token. SASA uses $K = 4096$ groups of width $r = 6$ with $s = 20$ active. The baselines are TopK, BatchTopK, and Matryoshka SAEs.<label for="sn-9" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-9" class="margin-toggle"><span class="sidenote"><a href="https://arxiv.org/abs/2406.04093" target="_blank" rel="noopener">TopK</a> (Gao et al., 2024)<br><a href="https://arxiv.org/abs/2412.06410" target="_blank" rel="noopener">BatchTopK</a> (Bussmann, Leask and Nanda, 2024)<br><a href="https://arxiv.org/abs/2503.17547" target="_blank" rel="noopener">Matryoshka SAEs</a> (Bussmann et al., 2025)</span>
+        </p>
+        <ul class="tight">
+          <li><strong>CE score</strong> measures reconstruction through the model: next-token cross-entropy after replacing activations with their reconstructions, scaled from 0% (zero ablation) to 100% (original activations).</li>
+          <li><strong>Absorption</strong> measures how often a feature's main latents stay weak or silent while other latents carry it. The first-letter benchmark asks which latents encode a word's first letter.<label for="sn-10" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-10" class="margin-toggle"><span class="sidenote"><a href="https://arxiv.org/abs/2409.14507" target="_blank" rel="noopener">A is for Absorption</a> (Chanin et al., 2025). Mean absorption measures how much other latents contribute when the main latents fall short; full absorption counts the cases where all main latents are off and another latent explains much of the feature.</span> The paper extends it to ten concept families: weekdays, months, countries, US cities, numbers, colors, directions, seasons, languages, and animals. For families, a SASA group is scored as one unit.</li>
+          <li><strong>Member prediction</strong> asks whether the units chosen to detect a family also tell its members apart, such as which weekday is mentioned, using one width-6 group or up to six SAE latents.</li>
+          <li><strong>AutoInterp</strong> asks an LLM to explain a unit from activating examples and then predict which held-out contexts activate it.<label for="sn-11" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-11" class="margin-toggle"><span class="sidenote"><a href="https://arxiv.org/abs/2503.09532" target="_blank" rel="noopener">SAEBench</a> (Karvonen et al., 2025), with its default protocol and a gpt-4o-mini judge on 1,000 units.</span></li>
+        </ul>
+        <figure class="numbered wide">
+          <div class="fig" data-chart="matched"></div>
+          <figcaption><b>Matched comparison on GPT-2</b> (the paper's Table 1): 24,576 decoder columns, $\ell_0 = 120$, mean ± standard deviation over three seeds. SASA has the lowest absorption on both benchmarks and the most accurate member prediction (86.2% against 68.9% for BatchTopK). It pays in reconstruction, with a CE score of 98.7% against 99.6–99.7%, and its AutoInterp score is lower, 83.2% against 86.3–88.4%.</figcaption>
+        </figure>
+        <p>
+The AutoInterp gap has a plausible cause. A SASA group combines several related values of a concept, so a single description may capture its activity less well; lower absorption need not raise this score. Across sparsity levels and dictionary widths (Figure 9), SASA has the lowest mean family absorption in every tested setting. First-letter absorption depends more on the setting: at $\ell_0 = 60$ with 24,576 columns, BatchTopK is lower (9.1% against 10.7%), while SASA is lowest at $\ell_0 = 120$ and $240$.
+        </p>
+        <figure class="numbered wide">
+          <div class="fig" data-chart="sweep"></div>
+          <figcaption><b>Absorption across sparsity and dictionary width</b> (the paper's Tables 5 and 7), lower is better. SASA uses width-6 groups with $s = \ell_0/6$. Error bars are standard deviations over seeds. At 24,576 columns, SASA's full family absorption is 0.8%, 10.9%, and 0.8% at $\ell_0 = 60$, 120, and 240, against 18.0–30.0% for the vector SAEs (Table 6).</figcaption>
+        </figure>
+        <p>
+The reconstruction cost is largest at low sparsity. Figure 10 plots each model's CE score against its family absorption and member prediction on the 12,288-column sweep, where SASA's CE score ranges from 95.8% at $\ell_0 = 30$ to 99.3% at $\ell_0 = 240$.
+        </p>
+        <figure class="numbered wide">
+          <div class="fig" data-chart="tradeoff"></div>
+          <figcaption><b>Reconstruction against absorption and member prediction</b> (the paper's Table 8, 12,288 decoder columns, $\ell_0 \in \{30, 60, 120, 240\}$). Moving right means better reconstruction; for absorption, lower is better, and for member prediction, higher is better. SASA gives up about 0.5–3 points of CE score for lower family absorption and higher member prediction at every sparsity level.</figcaption>
+        </figure>
+        <p>
+Member prediction improves further with a larger budget of decoder columns (Figure 11). In the main 24,576-column comparison, raising the budget from 6 to 24 columns lifts SASA from 86.2% to 94.8% and BatchTopK, the best vector SAE, from 68.9% to 86.7%.
+        </p>
+        <figure class="numbered">
+          <div class="fig" data-chart="budget"></div>
+          <figcaption><b>Predicting family members</b> (the paper's Table 9, 12,288 decoder columns), with one width-6 group or up to six latents, or up to four groups or 24 latents. Accuracy averages ten families, seven for BatchTopK at $\ell_0 = 240$.</figcaption>
+        </figure>
+        <p>
+On Mistral-7B, SASA is compared with the published ReLU SAE of Engels et al. Figure 12 shows absorption. SASA uses half the dictionary width (32,768 columns, against 65,536), half the training tokens (500M, against 1B), and fewer active coordinates ($\ell_0 = 80$, against 285). It also reconstructs better here: CE score 95.1% against 94.1%, KL score 95.3% against 93.2%, and explained variance 98.6% against 96.7%.<label for="sn-12" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-12" class="margin-toggle"><span class="sidenote">The same comparison on GPT-2 with Bloom's published ReLU SAE (24,576 columns, 300M tokens) and a SASA with 12,288 columns and 150M tokens, both at $\ell_0 = 60$: CE score 97.1% against 98.0%, KL score 97.0% against 98.0%, explained variance 98.8% against 99.1% (Tables 3 and 4).</span>
+        </p>
+        <figure class="numbered">
+          <div class="fig" data-chart="mistral"></div>
+          <figcaption><b>First-letter absorption on Mistral-7B</b> (the paper's Table 5), mean ± standard deviation over three seeds. SASA lowers mean absorption from 66.1% to 25.9% and full absorption from 17.0% to 4.4%.</figcaption>
+        </figure>
+
+        <h2 id="inside">Inside a group</h2>
+        <p>
+A SASA group should respond to a whole concept and keep the concept's values apart inside its code. Figure 13 shows two groups on fixed prompts: GPT-2 Group 1473, selected for temporal terms, and Mistral-7B Group 1570, selected for places. The height of each bar and the shade of each token give the group's norm at that token.
+        </p>
+        <figure class="numbered wide">
+          <div class="fig" data-chart="tokens"></div>
+          <figcaption><b>Group norms token by token</b> (the paper's Figures 12a and 13). Group 1473 peaks on the weekday and also responds to the month, the day number, the year, and the season. Group 1570 peaks on cities, then countries, then the continent. Labels mark the tokens the paper annotates.</figcaption>
+        </figure>
+        <p>
+The OpenWebText contexts where Group 1473 is most active all fall on weekday names:
+        </p>
+        <div class="ctx" role="table" aria-label="Top OpenWebText contexts for GPT-2 SASA Group 1473">
+          <div class="ctx-row" role="row"><span class="act" role="cell">14.936</span><span class="txt" role="cell">Attorney General Dominic Grieve was presented with legal papers on <mark>Monday</mark> arguing that because there were no fingerprints on five items found with</span></div>
+          <div class="ctx-row" role="row"><span class="act" role="cell">14.880</span><span class="txt" role="cell">state of Chihuahua returned to the United States on <mark>Friday</mark> night. The four-year-old remained in the custody</span></div>
+          <div class="ctx-row" role="row"><span class="act" role="cell">14.703</span><span class="txt" role="cell">office. The draft resolution, circulated by Egypt on <mark>Wednesday</mark> night and originally slated for a vote Thursday, demands</span></div>
+          <div class="ctx-row" role="row"><span class="act" role="cell">14.602</span><span class="txt" role="cell">President Trump made his debut at the United Nations on <mark>Tuesday</mark>, addressing the U.N. General Assembly at its annual</span></div>
+          <div class="ctx-row" role="row"><span class="act" role="cell">14.506</span><span class="txt" role="cell">s president Uhuru Kenyatta said in a speech on <mark>Tuesday</mark> (Feb. 16) that his government is thinking about building</span></div>
+        </div>
+        <p>
+Inside the group, the code keeps related values apart. Projecting Group 1473's six-dimensional codes with PCA separates weekdays, months, seasons, and years, and a supervised linear projection that maps the monthly centroids toward a circle in calendar order gives the season view below. Mistral Group 1570 separates cities from countries, and GPT-2 Group 1711, which AutoInterp labels “titles and awards related to sports and competitions”, separates sports, championships, and awards.
+        </p>
+        <div class="gallery">
+          <figure class="numbered">
+            <img src="static/img/temporal-pca.webp" width="867" height="817" loading="lazy" alt="3-D PCA of GPT-2 Group 1473 codes at temporal tokens: weekdays, months, seasons, and years occupy separate regions, each with a large centroid marker.">
+            <figcaption><b>Temporal categories in GPT-2 Group 1473</b> (the paper's Figure 3), PCA of codes with norm above 0.1.</figcaption>
+          </figure>
+          <figure class="numbered">
+            <img src="static/img/season-ring.webp" width="989" height="796" loading="lazy" alt="Season centroids winter, spring, summer, and autumn arranged around a loop, with the months as small points near their season.">
+            <figcaption><b>Seasons in calendar order</b> (the paper's Figure 12b). Month centroids are mapped toward a circle in calendar order, then averaged into seasons.</figcaption>
+          </figure>
+          <figure class="numbered">
+            <img src="static/img/geography-pca.webp" width="1101" height="784" loading="lazy" alt="2-D PCA of Mistral Group 1570 codes on 3,552 RAVEL cities: cities form a dense cluster on the right, countries a separate band at the lower left, continents in between.">
+            <figcaption><b>Cities and countries in Mistral Group 1570</b> (the paper's Figure 14), 2-D PCA over the RAVEL cities, their countries, and continents.</figcaption>
+          </figure>
+          <figure class="numbered">
+            <img src="static/img/sports-pca.webp" width="861" height="833" loading="lazy" alt="3-D PCA of GPT-2 Group 1711 codes: sports, championships, and awards form three separate clusters.">
+            <figcaption><b>Sports in GPT-2 Group 1711</b> (the paper's Figure 15): sports, championships, and awards form three clusters.</figcaption>
+          </figure>
+        </div>
+        <p style="margin-top:1.4rem">
+Groups also stay distinct from each other. Among the 500 most active groups of a 12,288-column GPT-2 SASA, the largest cosine between the principal directions of two groups has median 0.131, and only 0.16% of pairs exceed 0.5.
+        </p>
+
+        <h2 id="steering">Steering with a group</h2>
+        <p>
+If a group carries a concept, editing the hidden state inside the group's decoder span should change what the model says about that concept. The paper tests this on Mistral-7B with prompts that repeat a sentence and stop just before a month or weekday name. For each concept, it selects the group whose pre-activation norm best separates the concept's names from other tokens (by AUROC), and measures the total next-token probability of the concept's names.
+        </p>
+        <ul class="tight">
+          <li><strong>Removal.</strong> Project the hidden state at the earlier name off the selected group's 8-dimensional decoder span.</li>
+          <li><strong>Addition.</strong> Replace the earlier name with an unrelated noun, then add $\alpha\,\bv_k$ at that position, where $\bv_k$ is the group's mean decoded vector at month or weekday names in four held-out templates.</li>
+        </ul>
+        <p>
+Controls use the second-best group for the same concept, the group for the other concept, and random subspaces or vectors of the same size, so each comparison holds the size of the intervention fixed.
+        </p>
+        <figure class="numbered wide">
+          <div class="fig" data-chart="steering"></div>
+          <figcaption><b>Causal interventions in Mistral-7B</b> (the paper's Tables 2 and 13–15). Removing the month subspace lowers the probability of a month name from 86.1% to 40.9%, and the weekday subspace lowers weekday names from 90.0% to 45.2%; the controls barely move it. Adding the group vector at $\alpha = 2$ raises the probabilities from 5.6% to 78.7% for months and from 5.0% to 80.1% for weekdays. Each vector mainly raises its own concept, on both sets of prompts.</figcaption>
+        </figure>
+
+        <h2 id="ablations">Ablations</h2>
+        <p>
+<span class="lead-in">Feature dimension.</span> On synthetic activations that superpose 4 of 256 features with known subspaces of dimension 1 to 16, the paper counts how many TopK atoms carry 90% of each feature's projected contribution, and how many SASA groups capture 90% of its subspace (Figure 19). Halving the scalar budget from $\ell_0 = 64$ to 32 leaves the count near 8 atoms for $d_i = 4$ but sends it from 31.8 to 646.8 atoms for $d_i = 16$, and explained variance in that subspace falls from 92.6% to 47.1%. SASA covers the 16-dimensional features with 1.2 groups of width 16 or 2.1 groups of width 8, close to the minimum of 1 and 2.
+        </p>
+        <figure class="numbered wide">
+          <div class="fig" data-chart="synth"></div>
+          <figcaption><b>Splitting grows with feature dimension and a tighter budget</b> (the paper's Table 10), averages over three seeds. Dashed lines and hollow markers are the tighter budget, $\ell_0 = 32$. SASA uses $\lambda_{\dim} = 0$ here to isolate the effect of group width.</figcaption>
+        </figure>
+        <p>
+<span class="lead-in">Rank adaptation.</span> With features of dimension 1 to 8 and groups of width 10, the nuclear-norm penalty lowers the effective rank of groups matched to one-dimensional features from 7.1 to 4.2, while groups matched to eight-dimensional features keep a rank of 7.9 (Figure 20). Explained variance drops slightly, from 98.3% to 97.2%.
+        </p>
+        <figure class="numbered">
+          <div class="fig" data-chart="rank"></div>
+          <figcaption><b>The penalty adapts each group's rank</b> (the paper's Table 11). Effective rank is the fewest leading singular values of $\bD_k\bE_k$ that hold 90% of its squared Frobenius norm, averaged over groups that capture at least half of their matched feature.</figcaption>
+        </figure>
+        <p>
+<span class="lead-in">Group width.</span> At a fixed scalar budget, wider groups mean fewer active groups, since $s = \ell_0/r$. In the main GPT-2 setup, narrowing groups from $r = 6$ to $r = 2$ raises mean first-letter absorption from 11.3% to 13.9% and mean family absorption from 23.9% to 43.4%. The effect on first letters depends on the budget: in the 12,288-column grid below, at $\ell_0 = 30$, the same change allows 15 active groups instead of 5 and lowers first-letter absorption from 14.9% to 7.7%, while family absorption rises from 7.9% to 19.3%.
+        </p>
+        <figure class="table">
+          <figcaption>SASA group width on GPT-2 at 12,288 decoder columns (the paper's Table 12). Dashes mark settings where $\ell_0/r$ is not an integer.</figcaption>
+          <div class="scroll-x">
+          <table class="dt">
+            <thead><tr><th>Width $r$</th><th colspan="4">Mean family absorption (%) ↓</th><th colspan="4">Mean first-letter absorption (%) ↓</th><th colspan="4">CE score (%) ↑</th></tr>
+            <tr><th></th><th>30</th><th>60</th><th>120</th><th>240</th><th>30</th><th>60</th><th>120</th><th>240</th><th>30</th><th>60</th><th>120</th><th>240</th></tr></thead>
+            <tbody>
+              <tr><td>2</td><td>19.3</td><td>29.2</td><td>51.4</td><td>78.9</td><td>7.7</td><td>15.4</td><td>12.3</td><td>17.8</td><td>96.8</td><td>98.2</td><td>99.0</td><td>99.6</td></tr>
+              <tr><td>4</td><td>–</td><td>28.1</td><td>36.0</td><td>57.4</td><td>–</td><td>11.6</td><td>14.7</td><td>16.9</td><td>–</td><td>97.6</td><td>98.8</td><td>99.4</td></tr>
+              <tr class="ours"><td>6</td><td>7.9</td><td>5.5</td><td>25.5</td><td>36.6</td><td>14.9</td><td>15.9</td><td>15.1</td><td>14.8</td><td>95.8</td><td>97.3</td><td>98.5</td><td>99.3</td></tr>
+              <tr><td>8</td><td>–</td><td>–</td><td>5.1</td><td>50.5</td><td>–</td><td>–</td><td>13.2</td><td>15.6</td><td>–</td><td>–</td><td>98.4</td><td>99.3</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p class="tnote">Column headings under each metric give the target $\ell_0$. Width 6 is the main setting.</p>
+        </figure>
+
+        <details class="paperfigs">
+          <summary>More figures from the paper</summary>
+          <img src="static/img/empirical-covering.webp" width="792" height="476" loading="lazy" alt="Covering error against number of decoder directions for a GPT-2 temporal feature, falling slowly and roughly along the theory slope until it crosses the estimated cutoff near 0.69.">
+          <p><b>The paper's Figure 11.</b> Feature splitting as a covering problem in GPT-2. For each temporal component reconstructed by an SAE, the best single one of $N$ temporal decoder vectors is chosen and scaled. The largest relative error (blue) falls slowly with $N$; the dashed line is the $k = 1$ scaling of Theorem 1 with $\mathrm{dim90} = 10$.</p>
+          <img src="static/img/tuning-circle.webp" width="1321" height="271" loading="lazy" alt="Latent activation profiles on a synthetic circle: many narrow overlapping bumps for ReLU, TopK, and BatchTopK SAEs, and one broad curve for the SASA group.">
+          <p><b>The paper's Figure 5a.</b> Activation profiles on the synthetic circle. The vector SAEs respond locally; one SASA group responds across the whole concept.</p>
+          <img src="static/img/mistral-clusters.webp" width="1124" height="468" loading="lazy" alt="Mistral-7B SAE decoder clusters: cluster size against the PCA dimension that explains 80 percent of within-cluster variance, and a histogram of their ratio with median 1.67.">
+          <p><b>The paper's Figure 8.</b> Mistral-7B SAE decoder clusters: cluster size against the PCA dimension that explains 80% of the within-cluster variance. The median ratio is 1.67 (2.18 for GPT-2, Figure 9).</p>
+          <img src="static/img/mixture-subspaces.webp" width="1048" height="659" loading="lazy" alt="Held-out variance explained by a mixture of local rank-16 subspaces versus global PCA, as the number of clusters grows.">
+          <p><b>The paper's Figure 7.</b> A mixture of rank-16 local subspaces at 256 clusters captures 84.0% of held-out variance in raw GPT-2 activations, against 74.5% for global PCA at rank 256.</p>
+        </details>
+
+        <h2 id="limitations">Limitations</h2>
+        <ul class="tight">
+          <li>The covering bound assumes a per-feature co-activation budget below the feature's dimension.</li>
+          <li>The $\ell_1$ analysis uses optimal codes. It shows what that objective prefers, not that TopK training must converge to a fragmented dictionary.</li>
+          <li>The recovery theorem concerns population optima for a single feature sampled uniformly from a sphere, and the sample-complexity bound concerns estimating that feature's subspace. Extending them to learned routing of noisy superpositions and to practical training objectives is future work.</li>
+          <li>SASA gives up some reconstruction: on GPT-2 its CE score is 98.7% against 99.6–99.7% for the vector baselines at $\ell_0 = 120$. Its AutoInterp score is also lower.</li>
+          <li>A learned subspace does not come with interpretable coordinates. Reading the inside of a group still relies on manual inspection, and the authors aim to recover meaningful coordinates and use them for steering.</li>
+        </ul>
+
+        <h2 id="citation">Citation</h2>
+        <div class="bibwrap">
+          <pre class="citation-block bib">@inproceedings{dalili2026sasa,
+  title     = {Subspace-Aware Sparse Autoencoders for Effective Mechanistic Interpretability},
+  author    = {Dalili, Seyed Arshan and Mahdavi, Mehrdad},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2026},
+  url       = {https://arxiv.org/abs/2606.06333}
+}</pre>
+          <button type="button" class="copy">copy</button>
+        </div>
+      </article>
+    </div>
+
+    <footer class="site-footer">
+      Figures marked as the paper's are reproduced from it. The interactive figures compute toy versions of the paper's models in your browser. Chart values come from the paper's tables, except the token-level group norms and the timing bars, which are read from the paper's figures.
+    </footer>
+  </body>
+</html>
